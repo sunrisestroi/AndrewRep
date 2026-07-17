@@ -16,3 +16,9 @@ class Settings:
 
         #Настройки корабля
         self.ship_speed = 3.0
+
+        #Настройка пришелица
+        self.aliens_speed = 2.0
+        self.fleet_drop_speed = 10
+        #fleet_direction = 1 Обозночает движение вправо, а -1 влево
+        self.fleet_direction = 1
