@@ -5,6 +5,7 @@ import pygame
 from settings import Settings
 from ship import Ship
 from bullets import Bullets
+from alien import Alien
 
 class AlienInvasion:
     """Класс для управлением ресурсами и поведением игры"""
@@ -25,18 +26,16 @@ class AlienInvasion:
 
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
+        self.aliens = pygame.sprite.Group()
+
+        self._create_fleet()
 
     def run_game(self):
         """Запускает основной цикл игры"""
         while True:
             self._check_events()
             self.ship.update()
-            self.bullets.update()
-
-            #Удаление снарядов улетевших за экран
-            for bullet in self.bullets.copy():
-                if bullet.rect.bottom <= 0:
-                    self.bullets.remove(bullet)
+            self._update_bullets()
 
             self._update_screen()
             self.clock.tick(60)
@@ -80,8 +79,32 @@ class AlienInvasion:
 
     def _fire_bullet(self):
         """Создает снаряд и добавляет его в группу bullets"""
-        new_bullet = Bullets(self)
-        self.bullets.add(new_bullet)
+        if len(self.bullets) < self.settings.bullets_allowed:
+            new_bullet = Bullets(self)
+            self.bullets.add(new_bullet)
+
+    def _update_bullets(self):
+        self.bullets.update()
+
+        # Удаление снарядов улетевших за экран
+        for bullet in self.bullets.copy():
+            if bullet.rect.bottom <= 0:
+                self.bullets.remove(bullet)
+
+    def _create_fleet(self):
+        """Создает флот пришельцев"""
+        #Создание пришельца и вычисление количества пришельцев в ряду
+        #Интервал между соседями пришельцами равен ширине пришельца
+        alien = Alien(self)
+        alien_width = alien.rect.width
+
+        current_x = alien_width
+        while current_x < (self.settings.screen_width - 2 * alien_width):
+            new_alien = Alien(self)
+            new_alien.x = current_x
+            new_alien.rect.x = current_x
+            self.aliens.add(new_alien)
+            current_x += 2 * alien_width
 
     def _update_screen(self):
             """При каждом проходе цикла перерисовывается экран"""
@@ -89,6 +112,7 @@ class AlienInvasion:
             for bullet in self.bullets.sprites():
                 bullet.draw_bullet()
             self.ship.blitme()
+            self.aliens.draw(self.screen)
 
             pygame.display.flip()
 
