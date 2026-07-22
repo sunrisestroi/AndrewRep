@@ -10,6 +10,7 @@ from bullets import Bullets
 from alien import Alien
 from button import Button
 from scoreboard import Scoreboard
+from boss import Boss
 
 class AlienInvasion:
     """Класс для управления ресурсами и поведением игры"""
@@ -31,8 +32,9 @@ class AlienInvasion:
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
         self.aliens = pygame.sprite.Group()
-
+        self.boss_group = pygame.sprite.Group()
         self._create_fleet()
+
         #Игра запускается в активном состоянии
         self.game_active = True
         self.game_active = False
@@ -72,6 +74,8 @@ class AlienInvasion:
             #Сброс игровой статистики
             self.stats.reset_stats()
             self.sb.prep_score()
+            self.sb.prep_level()
+            self.sb.prep_ships()
             self.game_active = True
             #Очистка групп Aliens и bullets
             self.bullets.empty()
@@ -123,19 +127,37 @@ class AlienInvasion:
         self._check_bullet_alien_collisions()
 
     def _check_bullet_alien_collisions(self):
-        #Проверка попаданий в пришельца
-        #При обнаружении попадания удалить снаряд и пришельца
-        collisions = pygame.sprite.groupcollide(self.aliens, self.bullets, True, True)
+        # 1. Попадания в обычных пришельцев 👾
+        collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
         if collisions:
             for aliens in collisions.values():
                 self.stats.score += self.settings.aliens_points * len(aliens)
             self.sb.prep_score()
             self.sb.check_high_score()
-        if not self.aliens:
-            #Уничтожение существующих снарядов и создание нового флота
+
+        # 2. Попадания в босса 👹
+        boss_collisions = pygame.sprite.groupcollide(self.bullets, self.boss_group, True, False)
+        if boss_collisions:
+            for bosses in boss_collisions.values():
+                for boss in bosses:
+                    boss.hp -= 1
+                    if boss.hp <= 0:
+                        boss.kill()
+
+        # 3. Проверка: победили ли мы всех врагов? 🏆
+        if not self.aliens and not self.boss_group:
             self.bullets.empty()
-            self._create_fleet()
-            self.settings.increase_speed()
+            self.stats.level += 1
+            self.sb.prep_level()  # Обновляем отображение уровня
+            self.settings.increase_speed()  # Увеличиваем скорость и очки! 🚀
+
+            # Спавним босса на 10-м уровне или обычную армаду
+            if self.stats.level == 10:
+                self._create_boss()
+            else:
+                self._create_fleet()
+
+
 
     def _update_aliens(self):
         #Проверяет, достиг ли флот конца экрана
@@ -165,6 +187,11 @@ class AlienInvasion:
             current_x = alien_width
             current_y += 2 * alien_height
 
+    def _create_boss(self):
+        """Создаёт одного босса и добавляет его в группу."""
+        boss = Boss(self)
+        self.boss_group.add(boss)
+
     def create_alien(self, x_position, y_position):
         #Создает пришельца и размещает его во флот
             new_alien = Alien(self)
@@ -185,10 +212,11 @@ class AlienInvasion:
         self.settings.fleet_direction *= -1
 
     def _ship_hit(self):
-        """Обрабатывает столкновение коробля с пришельцем"""
+        """Обрабатывает столкновение корабля с пришельцем"""
         if self.stats.ships_left > 0:
-            #уменьшение ships_left
+            #уменьшение ships_left и обновление панели счета
             self.stats.ships_left -= 1
+            self.sb.prep_ships()
 
             #Очистка групп aliens bullets
             self.aliens.empty()
@@ -216,6 +244,8 @@ class AlienInvasion:
                 bullet.draw_bullet()
             self.ship.blitme()
             self.aliens.draw(self.screen)
+            self.boss_group.draw(self.screen)
+            self.boss_group.update()
 
             #Выводит информацию о счете
             self.sb.show_score()
