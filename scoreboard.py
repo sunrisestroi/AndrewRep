@@ -24,11 +24,16 @@ class Scoreboard:
 
     def prep_high_score(self):
         """Преобразует рекордный счет в графическое изображение"""
-        high_score = round(self.stats.high_score, -1)
+        if not self.stats.high_scores:
+            high_score = 0
+        else:
+            high_score = self.stats.high_scores[0]['score']
+
+        high_score = round(high_score, -1)
         high_score_str = f'{high_score:,}'
         self.high_score_image = self.font.render(high_score_str, True,
                                                  self.text_color, self.settings.bg_color)
-        #Рекорд выравнивается по центру верхней стороны экрана
+        # Рекорд выравнивается по центру верхней стороны экрана
         self.high_score_rect = self.high_score_image.get_rect()
         self.high_score_rect.centerx = self.screen_rect.centerx
         self.high_score_rect.top = self.score_rect.top
@@ -53,20 +58,15 @@ class Scoreboard:
         self.ships.draw(self.screen)
 
     def check_high_score(self):
-        """Проверяет, появился ли новый рекорд"""
-        if self.stats.score > self.stats.high_score:
-            self.stats.high_score = self.stats.score
-            self.prep_high_score()
-
-    def check_high_score(self):
         """Проверяет, появился ли новый рекорд."""
-        if self.stats.score > self.stats.high_score:
-            self.stats.high_score = self.stats.score
+        if not self.stats.high_scores:
+            high_score = 0
+        else:
+            high_score = self.stats.high_scores[0]['score']
+
+        if self.stats.score > high_score:
             self.prep_high_score()
 
-            # Сохраняем новый рекорд на диск
-            path = Path('high_score.txt')
-            path.write_text(str(self.stats.high_score))
 
     def prep_level(self):
         """Преобразует уровень в графическое изображение"""
@@ -86,3 +86,26 @@ class Scoreboard:
             ship.rect.x = 10 + ship_number * ship.rect.width
             ship.rect.y = 10
             self.ships.add(ship)
+
+    def show_high_scores(self):
+        """Выводит таблицу лучших результатов на экран."""
+        y_position = 100
+
+        for entry in self.stats.high_scores:
+            text = f"{entry['name']}: {entry['score']}"
+            image = self.font.render(text, True, self.text_color, self.settings.bg_color)
+            rect = image.get_rect()
+            rect.centerx = self.screen_rect.centerx
+            rect.top = y_position
+
+            self.screen.blit(image, rect)
+            y_position += 30
+
+        # ✍️ Показываем поле ввода ТОЛЬКО если сейчас идёт режим ввода имени
+        if self.ai_game.showing_high_scores:
+            name_text = f"Enter name: {self.ai_game.player_name}"
+            name_image = self.font.render(name_text, True, self.text_color, self.settings.bg_color)
+            name_rect = name_image.get_rect()
+            name_rect.centerx = self.screen_rect.centerx
+            name_rect.top = y_position + 20
+            self.screen.blit(name_image, name_rect)

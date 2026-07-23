@@ -29,6 +29,8 @@ class AlienInvasion:
         self.stats = GameStats(self)
         self.sb = Scoreboard(self)
 
+        self.player_name = ""
+
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
         self.aliens = pygame.sprite.Group()
@@ -38,6 +40,7 @@ class AlienInvasion:
         #Игра запускается в активном состоянии
         self.game_active = True
         self.game_active = False
+        self.showing_high_scores = False
         self.play_button = Button(self, "Play")
 
     def run_game(self):
@@ -100,6 +103,16 @@ class AlienInvasion:
             self.ship.moving_down = True
         elif event.key == pygame.K_SPACE:
             self._fire_bullet()
+        elif event.key == pygame.K_BACKSPACE:
+        # Удаляем последний символ из строки
+            self.player_name = self.player_name[:-1]
+        elif event.key == pygame.K_RETURN:
+            self.stats.add_high_score(self.player_name, self.stats.score)
+            self.showing_high_scores = False
+            self.player_name = ""
+        else:
+            # Добавляем введённую букву или цифру
+            self.player_name += event.unicode
 
     def _check_keyup_events(self, event):
         """Реагирует на нажатие клавиш"""
@@ -227,6 +240,7 @@ class AlienInvasion:
             #Пауза
             sleep(0.5)
         else:
+            self.showing_high_scores = True
             self.game_active = False
             pygame.mouse.set_visible(True)
 
@@ -247,11 +261,14 @@ class AlienInvasion:
             self.boss_group.draw(self.screen)
             self.boss_group.update()
 
-            #Выводит информацию о счете
-            self.sb.show_score()
+            #Выводит информацию о счете или таблицу
+            if not self.game_active:
+                self.sb.show_high_scores()
+            else:
+                self.sb.show_score()
 
             #Кнопка Play отображается в том случае, если игра не активна
-            if not self.game_active:
+            if not self.game_active and not self.showing_high_scores:
                 self.play_button.draw_button()
 
             pygame.display.flip()
