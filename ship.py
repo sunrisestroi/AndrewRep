@@ -18,6 +18,7 @@ class Ship(Sprite):
         #Каждый новый корабль появляется у нижнего края экрана
         self.rect.midbottom = self.screen_rect.midbottom
 
+
         #Сохранение вещественной координаты центра корабля
         self.x = float(self.rect.x)
         self.y = float(self.rect.y)
@@ -56,4 +57,5 @@ class Ship(Sprite):
     def center_ship(self):
         #Размещает корабль в центре нижней части экрана
         self.rect.midbottom = self.screen_rect.midbottom
-        self.x = float(self.rect.x)  
+        self.x = float(self.rect.x)
+        self.y = float(self.rect.y)
